@@ -28,8 +28,9 @@ const KNOWN_PLATFORMS = [
 ];
 
 const fetchDashboardOverview = async () => {
+   const API_BASE_URL=import.meta.env.VITE_API_BASE_URL,
   const { data } = await axios.get(
-    "http://localhost:3000/api/social/get/overview",
+    `${API_BASE_URL}/api/social/get/activity`,
     { withCredentials: true },
   );
   return data;
@@ -38,8 +39,9 @@ const fetchDashboardOverview = async () => {
 const ACTIVITY_PAGE_SIZE = 10;
 
 const fetchActivityPage = async ({ pageParam }) => {
+  const API_BASE_URL=import.meta.env.VITE_API_BASE_URL,
   const { data } = await axios.get(
-    "http://localhost:3000/api/social/get/activity",
+    `${API_BASE_URL}/api/social/get/activity`,
     {
       params: { cursor: pageParam, limit: ACTIVITY_PAGE_SIZE },
       withCredentials: true,
