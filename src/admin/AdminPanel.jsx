@@ -7,6 +7,7 @@ import {
   X,
   Loader2,
   RefreshCcw,
+  LogOut,
 } from "lucide-react";
 
 import Card from "../ui/Card";
@@ -16,6 +17,7 @@ import {
   approveProPaymentApi,
   rejectProPaymentApi,
 } from "../api/adminApi/adminApi";
+import logoutApi from "../api/logoutApi"; // adjust path/name to match your actual logout API
 
 const STATUS_STYLES = {
   pending: "bg-slate-700/40 text-slate-300 border-slate-600",
@@ -52,6 +54,14 @@ export default function AdminPanel() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["proPayments"] });
       closeActionModal();
+    },
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: () => logoutApi(),
+    onSuccess: () => {
+      queryClient.clear(); // wipe cached user/query data
+      window.location.href = "/login"; // adjust to your actual login route
     },
   });
 
@@ -113,6 +123,20 @@ export default function AdminPanel() {
               <RefreshCcw
                 className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`}
               />
+            </button>
+
+            <button
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+              className="cursor-pointer h-10 px-4 flex items-center gap-1.5 rounded-xl border border-slate-800 bg-[#171E2E] text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10 transition-colors text-sm font-medium disabled:opacity-50"
+              title="Logout"
+            >
+              {logoutMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <LogOut className="w-4 h-4" />
+              )}
+              Logout
             </button>
           </div>
         </div>
