@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useCallback } from "react";
-import axios from "axios";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import {
   Send,
@@ -19,6 +18,7 @@ import Badge from "../ui/Badge";
 import Button from "../ui/Button";
 import authStore from "../store/store";
 import { useNavigate } from "react-router-dom";
+import api from "../api/api"; // adjust to your actual axios instance path
 
 const KNOWN_PLATFORMS = [
   { key: "instagram", label: "Instagram", icon: Instagram },
@@ -28,25 +28,16 @@ const KNOWN_PLATFORMS = [
 ];
 
 const fetchDashboardOverview = async () => {
-   const API_BASE_URL=import.meta.env.VITE_API_BASE_URL,
-  const { data } = await axios.get(
-    `${API_BASE_URL}/api/social/get/activity`,
-    { withCredentials: true },
-  );
+  const { data } = await api.get("/api/social/get/activity");
   return data;
 };
 
 const ACTIVITY_PAGE_SIZE = 10;
 
 const fetchActivityPage = async ({ pageParam }) => {
-  const API_BASE_URL=import.meta.env.VITE_API_BASE_URL,
-  const { data } = await axios.get(
-    `${API_BASE_URL}/api/social/get/activity`,
-    {
-      params: { cursor: pageParam, limit: ACTIVITY_PAGE_SIZE },
-      withCredentials: true,
-    },
-  );
+  const { data } = await api.get("/api/social/get/activity", {
+    params: { cursor: pageParam, limit: ACTIVITY_PAGE_SIZE },
+  });
   return data;
 };
 
