@@ -6,7 +6,10 @@ const api = axios.create({
   },
   withCredentials: true,
 });
-
+export const registerUser = async (payload) => {
+  const response = await api.post("/api/auth/register", payload);
+  return response.data;
+};
 export const loginApi = async (formData) => {
   const response = await api.post("/api/auth/login", formData);
   return response.data;

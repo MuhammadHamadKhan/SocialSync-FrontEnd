@@ -17,25 +17,13 @@ import { useMutation } from "@tanstack/react-query";
 import Payment from "../components/Payment";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import authStore from "../store/store";
+import { registerUser } from "../api/loginApi"; // adjust to the actual path/filename of your axios instance
 
 // Extracted so React Query owns the network call — testable in isolation,
 // and swappable for a shared axios/fetch client later.
 async function registerUser(payload) {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Registration failed.");
-  }
-
-  return data;
+  const response = await api.post("/api/auth/register", payload);
+  return response.data;
 }
 
 export default function RegisterForm() {
@@ -104,7 +92,10 @@ export default function RegisterForm() {
   // Small local-only error for the client-side password check above,
   // kept separate from registerMutation.error (server-side errors).
   const [localError, setLocalError] = useState("");
-  const displayedError = localError || registerMutation.error?.message;
+  const displayedError =
+    localError ||
+    registerMutation.error?.response?.data?.message ||
+    registerMutation.error?.message;
 
   if (registerMutation.data && formData.role === "pro") {
     return <Payment uiState={{ apiResponseData: registerMutation.data }} />;
