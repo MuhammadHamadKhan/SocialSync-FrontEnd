@@ -17,7 +17,7 @@ import {
   approveProPaymentApi,
   rejectProPaymentApi,
 } from "../api/adminApi/adminApi";
-import logoutApi from "../api/logoutApi"; // adjust path/name to match your actual logout API
+import { logoutApi } from "../api/logoutApi"; // adjust path/name to match your actual logout API
 
 const STATUS_STYLES = {
   pending: "bg-slate-700/40 text-slate-300 border-slate-600",
