@@ -16,16 +16,23 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import authStore from "../store/store";
 import { useMutation } from "@tanstack/react-query";
 import { logoutApi } from "../api/logoutApi";
+import UserPopup from "../components/UserPopup";
 export default function DashboardLayout() {
+  const navigate = useNavigate();
   const user = authStore((state) => state.user);
   const setLogout = authStore((state) => state.setLogout);
+  /*  Popups  */
+  const [showLogoutPopup, setShowLogoutPopup] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const { mutate, data, isSuccess, isError } = useMutation({
     mutationKey: ["logout"],
     mutationFn: logoutApi,
+    onSuccess: () => {
+      setLogout();
+      navigate("/");
+    },
   });
-  if (isSuccess) {
-    setLogout();
-  }
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const { pathname } = useLocation();
@@ -38,11 +45,11 @@ export default function DashboardLayout() {
   // Navigation Links Definition Matrix
   const navItems = [
     { id: "overview", name: "Overview Dashboard", icon: LayoutDashboard },
-    { id: "studio", name: "Creative Studio", icon: Zap },
+    { id: "create", name: "Creative Studio", icon: Zap },
     { id: "integrations", name: "Social Accounts", icon: Layers },
     { id: "settings", name: "System Settings", icon: Settings },
   ];
-  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-[#0B0F19] text-white font-sans antialiased flex overflow-hidden h-screen">
       {/* ================= BACKGROUND BLUR ANCHORS ================= */}
@@ -58,7 +65,7 @@ export default function DashboardLayout() {
               <Zap className="w-5 h-5 text-white fill-white/10" />
             </div>
             <span className="font-bold text-lg tracking-wider bg-gradient-to-r from-white to-[#94A3B8] bg-clip-text text-transparent">
-              CROWN.AI
+              Social Sync
             </span>
           </div>
 
@@ -81,7 +88,7 @@ export default function DashboardLayout() {
                   }`}
                 >
                   <Icon
-                    className={`w-4 h-4 transition-colors ${pathname === item.id ? "text-[#00F2FE]" : "group-hover:text-[#00F2FE]"}`}
+                    className={`w-4 h-4 transition-colors ${active ? "text-[#00F2FE]" : "group-hover:text-[#00F2FE]"}`}
                   />
                   {item.name}
                 </button>
@@ -100,7 +107,7 @@ export default function DashboardLayout() {
             </div>
             <div className="truncate w-28">
               <p className=" uppercase text-xs font-semibold text-white truncate">
-                {user.role} mode
+                {user?.role} mode
               </p>
               <Badge
                 variant="purple"
@@ -111,24 +118,49 @@ export default function DashboardLayout() {
             </div>
           </div>
           <button
+            className="cursor-pointer"
             onClick={() => {
-              mutate();
+              setShowLogoutPopup(true);
             }}
-            className="cursor-pointer  text-[#94A3B8] hover:text-red-400 p-2 rounded-xl hover:bg-[#0B0F19] transition-all"
           >
             <LogOut className="w-4 h-4" />
           </button>
         </div>
+        {showLogoutPopup && (
+          <div className="absolute bottom-10 left-60 w-72 rounded-2xl bg-[#171E2E] border border-slate-700 p-5 shadow-2xl">
+            <h3 className="font-semibold text-white">Logout</h3>
+
+            <p className="text-sm text-[#94A3B8] mt-2">
+              Are you sure you want to sign out?
+            </p>
+
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                onClick={() => setShowLogoutPopup(false)}
+                className="cursor-pointer px-3 py-2 rounded-xl bg-[#0B0F19]"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => mutate()}
+                className="cursor-pointer px-3 py-2 rounded-xl bg-red-500 hover:bg-red-600"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* ================= MOBILE NAV MENU WINDOW ================= */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 bg-[#0B0F19]/90 z-50 md:hidden backdrop-blur-sm animate-fade-in">
+        <div className=" fixed inset-0 bg-[#0B0F19]/90 z-50 md:hidden backdrop-blur-sm animate-fade-in">
           <div className="w-72 bg-[#171E2E] h-full border-r border-slate-800 flex flex-col justify-between p-5">
             <div>
               <div className="flex items-center justify-between pb-6 border-b border-slate-800">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#00F2FE] to-[#7F00FF] flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-linear-to-tr from-[#00F2FE] to-[#7F00FF] flex items-center justify-center">
                     <Zap className="w-4 h-4 text-white" />
                   </div>
                   <span className="font-bold tracking-wide">CROWN.AI</span>
@@ -148,7 +180,7 @@ export default function DashboardLayout() {
                     <button
                       key={item.id}
                       onClick={() => {
-                        setActiveTab(item.id);
+                        navigate(item.id);
                         setMobileMenuOpen(false);
                       }}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm ${
@@ -167,14 +199,53 @@ export default function DashboardLayout() {
             <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
               <span className="text-xs text-[#94A3B8]">Connected Profile</span>
               <button
+                className="cursor-pointer"
                 onClick={() => {
-                  mutate();
+                  setShowLogoutPopup(true);
                 }}
-                className="text-red-400 p-2"
               >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
+            {showLogoutPopup && (
+              <>
+                {/* Backdrop */}
+                <div
+                  onClick={() => setShowLogoutPopup(false)}
+                  className="fixed inset-0 bg-black/60 z-40"
+                />
+
+                {/* Bottom Sheet */}
+                <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#171E2E] rounded-t-3xl border-t border-slate-700 p-6 animate-[slideUp_.25s_ease]">
+                  {/* Handle */}
+                  <div className="w-12 h-1.5 bg-slate-600 rounded-full mx-auto mb-5" />
+
+                  <h3 className="text-lg font-semibold text-white text-center">
+                    Logout
+                  </h3>
+
+                  <p className="text-sm text-[#94A3B8] text-center mt-2">
+                    Are you sure you want to sign out?
+                  </p>
+
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={() => setShowLogoutPopup(false)}
+                      className="cursor-pointer flex-1 py-3 rounded-xl bg-[#0B0F19] border border-slate-700 text-white font-medium"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      onClick={() => mutate()}
+                      className="cursor-pointer flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -193,12 +264,8 @@ export default function DashboardLayout() {
             </button>
             <div>
               <h2 className="text-sm font-bold text-white capitalize tracking-wide">
-                {navItems.find((item) => {
-                  const active = isActive(pathname, item.id);
-                  if (active) {
-                    return item;
-                  }
-                }).name || "Dashboard"}
+                {navItems.find((item) => isActive(pathname, item.id))?.name ||
+                  "Dashboard"}
               </h2>
               <p className="text-[11px] text-[#94A3B8] hidden sm:block">
                 Automated Short-Form Workspace Platform v1.0
@@ -213,10 +280,22 @@ export default function DashboardLayout() {
               API Server Pipeline Connected
             </div>
 
-            <button className="p-2.5 rounded-2xl bg-[#0B0F19] border border-slate-800 text-[#94A3B8] hover:text-white transition-all relative">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-[#00F2FE] rounded-full shadow-[0_0_8px_#00F2FE]" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => {
+                  console.log(showProfile);
+                  setShowProfile(!showProfile);
+                }}
+                className=" cursor-pointer w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#7F00FF] to-[#00F2FE] p-[1px]"
+              >
+                <div className="w-full h-full rounded-[15px] bg-[#171E2E] flex items-center justify-center">
+                  <UserCheck className="w-4 h-4 text-[#00F2FE]" />
+                </div>
+              </button>
+              {showProfile && (
+                <UserPopup user={user} setShowProfile={setShowProfile} />
+              )}
+            </div>
           </div>
         </header>
 

@@ -4,8 +4,8 @@ import { Menu, X, Zap } from "lucide-react";
 const NAV_LINKS = [
   { label: "Features", href: "#features" },
   { label: "Pricing", href: "#pricing" },
-  { label: "About", href: "dashboard" },
-  { label: "Contact", href: "#contact" },
+  { label: "FAQS", href: "#faq" },
+  { label: "Reviews", href: "#reviews" },
 ];
 
 export default function Navbar() {
@@ -17,7 +17,17 @@ export default function Navbar() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+  const scrollToSection = (id) => {
+    const element = document.getElementById(id);
+    console.log(element);
 
+    if (element) {
+      element.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
   return (
     <header
       className={`sticky top-0 z-50 w-full transition-all duration-300 ${
@@ -46,6 +56,10 @@ export default function Navbar() {
             <a
               key={link.label}
               href={link.href}
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToSection(link.href.slice(1));
+              }}
               className="text-sm font-medium text-[#94A3B8] hover:text-white transition-colors relative group"
             >
               {link.label}

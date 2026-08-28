@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import {
   Mail,
   Lock,
@@ -13,9 +13,13 @@ import Card from "../ui/Card";
 import Button from "../ui/Button";
 import { useMutation } from "@tanstack/react-query";
 import { loginApi } from "../api/loginApi";
+import authStore from "../store/store";
 
 export default function Login() {
   const navigate = useNavigate();
+  const isLogin = authStore((state) => state.isLogin);
+  const setLogin = authStore((state) => state.setLogin);
+  const isAdmin = authStore((state) => state.isAdmin);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -29,17 +33,23 @@ export default function Login() {
     });
   };
 
-  const { mutate, data, isPending, isError, error, isSuccess } = useMutation({
+  const { mutate, isPending, isError, error, isSuccess } = useMutation({
     mutationFn: loginApi,
+    onSuccess: (response) => {
+      setLogin(response.isAdmin); // pass isAdmin into the store
+      navigate(response.isAdmin ? "/adminPanel" : "/dashboard/overview");
+    },
   });
-  if (isSuccess) {
-    navigate("/dashboard");
-  }
+
   const handleForm = (e) => {
     e.preventDefault();
     mutate(formData);
   };
-
+  if (isLogin) {
+    return (
+      <Navigate to={isAdmin ? "/adminPanel" : "/dashboard/overview"} replace />
+    );
+  }
   return (
     <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center px-5 py-8 sm:px-8">
       <div className="w-full max-w-md">
@@ -136,7 +146,7 @@ export default function Login() {
             {/* Login Button */}
             <Button
               type="submit"
-              className="w-full h-12 rounded-xl bg-linear-to-r from-[#00F2FE] to-[#7F00FF] text-white font-semibold shadow-lg shadow-cyan-500/20 hover:opacity-95 transition-all"
+              className=" cursor-pointer w-full h-12 rounded-xl bg-linear-to-r from-[#00F2FE] to-[#7F00FF] text-white font-semibold shadow-lg shadow-cyan-500/20 hover:opacity-95 transition-all"
             >
               <span className="flex items-center justify-center gap-2">
                 {isPending ? "Signing In...." : "Sign  In"}

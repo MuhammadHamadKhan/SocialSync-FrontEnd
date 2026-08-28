@@ -13,9 +13,36 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import Payment from "../components/Payment";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import authStore from "../store/store";
+
+// Extracted so React Query owns the network call — testable in isolation,
+// and swappable for a shared axios/fetch client later.
+async function registerUser(payload) {
+  const API_BASE_URL = process.env.API_BASE_URL;
+  const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Registration failed.");
+  }
+
+  return data;
+}
+
 export default function RegisterForm() {
+  const navigate = useNavigate();
+  const isLogin = authStore((state) => state.isLogin);
+  const setLogin = authStore((state) => state.setLogin);
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -25,32 +52,34 @@ export default function RegisterForm() {
     paymentProvider: "easypaisa",
   });
 
-  // Independent visibility toggles for enhanced password input control
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [uiState, setUiState] = useState({
-    isLoading: false,
-    errorMessage: "",
-    successMessage: "",
-    apiResponseData: null,
+  // React Query now owns loading / error / response-data state for us —
+  // registerMutation.isPending / .error / .data replace the old uiState object.
+  const registerMutation = useMutation({
+    mutationFn: registerUser,
+    onSuccess: (data, variables) => {
+      const { role } = variables;
+
+      if (role === "free") {
+        setLogin();
+        navigate("/dashboard/overview");
+      }
+      // pro: don't touch auth state — no session exists yet.
+      // Payment component renders below once approved.
+    },
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (uiState.errorMessage)
-      setUiState((prev) => ({ ...prev, errorMessage: "" }));
+    if (registerMutation.isError) registerMutation.reset();
   };
 
   const handleRoleSelect = (selectedRole) => {
     setFormData((prev) => ({ ...prev, role: selectedRole }));
-    setUiState({
-      isLoading: false,
-      errorMessage: "",
-      successMessage: "",
-      apiResponseData: null,
-    });
+    registerMutation.reset();
   };
 
   // Only trigger an error if the user has typed at least as many characters as the main password
@@ -58,74 +87,33 @@ export default function RegisterForm() {
     formData.confirmPassword.length >= formData.password.length &&
     formData.password !== formData.confirmPassword;
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Prevent submissions if client-side criteria aren't met
     if (formData.password !== formData.confirmPassword) {
-      setUiState((prev) => ({
-        ...prev,
-        errorMessage: "Passwords do not match. Please verify.",
-      }));
+      // Local validation error — surface it the same way mutation errors are shown.
+      registerMutation.reset();
+      setLocalError("Passwords do not match. Please verify.");
       return;
     }
 
-    setUiState({
-      isLoading: true,
-      errorMessage: "",
-      successMessage: "",
-      apiResponseData: null,
-    });
-
-    // Safely remove confirmPassword from network payload
     const { confirmPassword, ...apiPayload } = formData;
-
-    try {
-      const response = await fetch("http://localhost:3000/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(apiPayload),
-      });
-
-      // Parse the real backend response body
-      const data = await response.json();
-
-      // IF SERVER STATUS IS NOT 2xx (e.g., 400 Bad Request, 409 Conflict, 500 Server Error)
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed.");
-      }
-
-      // IF SERVER STATUS IS SUCCESSFUL
-      if (formData.role === "free") {
-        setUiState({
-          isLoading: false,
-          errorMessage: "",
-          // Fallback to custom string if your backend doesn't supply a generic "message" property
-          successMessage: data.message || "Registered successfully!",
-          apiResponseData: null,
-        });
-      } else {
-        setUiState({
-          isLoading: false,
-          errorMessage: "",
-          successMessage: data.message,
-          apiResponseData: data, // Captures the precise JSON returned for Pro tiers
-        });
-      }
-    } catch (err) {
-      // Gracefully catches network crashes or standard thrown validation errors from above
-      setUiState({
-        isLoading: false,
-        errorMessage: err.message || "Server connection timed out.",
-        successMessage: "",
-        apiResponseData: null,
-      });
-    }
+    registerMutation.mutate(apiPayload);
   };
-  if (uiState.apiResponseData) {
-    return <Payment uiState={uiState} />;
+
+  // Small local-only error for the client-side password check above,
+  // kept separate from registerMutation.error (server-side errors).
+  const [localError, setLocalError] = useState("");
+  const displayedError = localError || registerMutation.error?.message;
+
+  if (registerMutation.data && formData.role === "pro") {
+    return <Payment uiState={{ apiResponseData: registerMutation.data }} />;
   }
+
+  if (isLogin) {
+    return <Navigate to={"/dashboard/overview"} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#0B0F19] text-[#94A3B8] flex items-center justify-center p-4 sm:p-8 font-sans selection:bg-[#00F2FE]/30 selection:text-white relative overflow-x-hidden">
       <div className="hidden sm:block absolute top-1/4 left-1/4 w-96 h-96 bg-[#00F2FE]/10 rounded-full blur-[120px] pointer-events-none" />
@@ -222,7 +210,6 @@ export default function RegisterForm() {
             </div>
           </div>
 
-          {/* Primary Password Input Node */}
           <div>
             <label className="block text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
               Password
@@ -246,7 +233,7 @@ export default function RegisterForm() {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-                tabIndex="-1" // Prevents breaking keyboard navigation focus loops
+                tabIndex="-1"
               >
                 {showPassword ? (
                   <EyeOff className="w-4 h-4" />
@@ -257,7 +244,6 @@ export default function RegisterForm() {
             </div>
           </div>
 
-          {/* Confirm Password Input Node */}
           <div>
             <label className="block text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
               Confirm Password
@@ -329,12 +315,10 @@ export default function RegisterForm() {
 
           <button
             type="submit"
-            disabled={uiState.isLoading || isPasswordMismatched}
-            className={
-              "w-full py-3 mt-1.5 sm:mt-2 text-sm sm:text-base font-semibold rounded-xl text-white transition-all transform active:scale-[0.97] sm:active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shadow-lg     bg-gradient-to-r from-[#7F00FF] to-[#00F2FE] hover:opacity-95 shadow-[#00F2FE]/10 disabled:opacity-40 disabled:pointer-events-none"
-            }
+            disabled={registerMutation.isPending || isPasswordMismatched}
+            className="w-full py-3 mt-1.5 sm:mt-2 text-sm sm:text-base font-semibold rounded-xl text-white transition-all transform active:scale-[0.97] sm:active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shadow-lg bg-gradient-to-r from-[#7F00FF] to-[#00F2FE] hover:opacity-95 shadow-[#00F2FE]/10 disabled:opacity-40 disabled:pointer-events-none"
           >
-            {uiState.isLoading ? (
+            {registerMutation.isPending ? (
               <RefreshCw className="w-4 h-4 animate-spin" />
             ) : formData.role === "pro" ? (
               <>
@@ -345,6 +329,7 @@ export default function RegisterForm() {
               "Create My Free Workspace"
             )}
           </button>
+
           <div className="mt-8 text-center">
             <p className="text-sm text-[#94A3B8]">
               Already have an account?{" "}
@@ -357,20 +342,20 @@ export default function RegisterForm() {
             </p>
           </div>
 
-          {uiState.errorMessage && (
+          {displayedError && (
             <div className="flex items-center gap-2.5 p-3 sm:p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl">
               <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
               <span className="text-[11px] sm:text-xs font-medium">
-                {uiState.errorMessage}
+                {displayedError}
               </span>
             </div>
           )}
 
-          {uiState.successMessage && (
+          {registerMutation.isSuccess && formData.role === "free" && (
             <div className="flex items-center gap-2.5 p-3 sm:p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
               <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
               <span className="text-[11px] sm:text-xs font-medium">
-                {uiState.successMessage}
+                Registered successfully!
               </span>
             </div>
           )}
