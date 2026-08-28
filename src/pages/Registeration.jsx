@@ -17,7 +17,7 @@ import { useMutation } from "@tanstack/react-query";
 import Payment from "../components/Payment";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import authStore from "../store/store";
-import { registerUser } from "../api/loginApi"; // adjust to the actual path/filename of your axios instance
+import api from "../api/api"; // adjust to the actual path/filename of your axios instance
 
 // Extracted so React Query owns the network call — testable in isolation,
 // and swappable for a shared axios/fetch client later.
