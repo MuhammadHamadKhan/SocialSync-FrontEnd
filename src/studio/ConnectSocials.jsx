@@ -255,8 +255,9 @@ export default function ConnectSocials() {
                     className="cursor-pointer w-full py-2.5 text-xs rounded-xl shadow-md font-bold"
                     onClick={() => openOAuthPopup(platform.key)}
                   >
-                    {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {isConnected ? (
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : isConnected ? (
                       <>
                         <CheckCircle2 className="w-4 h-4 text-green-500" />
                         Connected
