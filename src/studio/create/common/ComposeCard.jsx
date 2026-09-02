@@ -363,7 +363,6 @@ Share something with your audience...`}
               onClick={onPublish}
               disabled={
                 isPending ||
-                !caption.trim() ||
                 (platform !== "linkedin" && images.length === 0 && !video) ||
                 caption.length > config.maxCaption
               }
