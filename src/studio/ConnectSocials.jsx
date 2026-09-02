@@ -17,7 +17,13 @@ import Badge from "../ui/Badge";
 import Button from "../ui/Button";
 import { toast } from "react-toastify";
 import api from "../api/api";
-const BACKEND_ORIGIN = "https://flatware-surrogate-single.ngrok-free.dev";
+
+// Must match the origin the OAuth popup is actually served from (your
+// backend), since that's what event.origin will be when it postMessages
+// back to this window. This should be the SAME value as FRONTEND_URL is
+// on the backend, just from the other side — backend's own domain, not
+// the frontend's.
+const BACKEND_ORIGIN = "https://social-sync-back-end.vercel.app";
 
 const PLATFORM_CONFIG = [
   {
@@ -137,9 +143,14 @@ export default function ConnectSocials() {
     }
   };
 
+  // Fetch once on mount only. This must NOT depend on `connectedAccounts` —
+  // fetchConnectedAccounts() always sets a brand-new object reference (from
+  // .reduce), so depending on that state here would re-trigger the effect
+  // every time it runs, causing an infinite fetch loop. The OAuth-success
+  // handler below already calls fetchConnectedAccounts() again when needed.
   useEffect(() => {
     fetchConnectedAccounts();
-  }, [connectedAccounts]);
+  }, []);
 
   useEffect(() => {
     const handleMessage = (event) => {
