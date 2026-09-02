@@ -11,6 +11,7 @@ import {
   Video,
   Link2Icon,
   MessageCircle as InstagramIcon,
+  Loader2,
 } from "lucide-react";
 import Card from "../ui/Card";
 import Badge from "../ui/Badge";
@@ -123,6 +124,7 @@ export default function ConnectSocials() {
       return acc;
     }, {}),
   );
+  const [isLoading, setIsloading] = useState(true);
 
   const fetchConnectedAccounts = async () => {
     try {
@@ -141,6 +143,7 @@ export default function ConnectSocials() {
     } catch (err) {
       console.error(err);
     }
+    setisLoading(false);
   };
 
   // Fetch once on mount only. This must NOT depend on `connectedAccounts` —
@@ -252,6 +255,7 @@ export default function ConnectSocials() {
                     className="cursor-pointer w-full py-2.5 text-xs rounded-xl shadow-md font-bold"
                     onClick={() => openOAuthPopup(platform.key)}
                   >
+                    {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                     {isConnected ? (
                       <>
                         <CheckCircle2 className="w-4 h-4 text-green-500" />
