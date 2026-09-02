@@ -167,7 +167,12 @@ export default function ConnectSocials() {
       const match = type.match(/^([A-Z]+)_(CONNECTED|ERROR)$/);
       if (!match) return;
 
-      const [platformUpper, kind] = match;
+      // match[0] is the FULL matched string ("LINKEDIN_CONNECTED"); the actual
+      // capture groups start at index 1. Skip index 0 with a leading comma —
+      // omitting it previously caused platformUpper to be the whole string
+      // and kind to be just "LINKEDIN", so CONNECTED messages always fell
+      // into the error branch (e.g. "Failed to connect linkedin_connected.").
+      const [, platformUpper, kind] = match;
       const platform = platformUpper.toLowerCase();
 
       if (kind === "CONNECTED") {
