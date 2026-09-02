@@ -16,7 +16,7 @@ import Card from "../ui/Card";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
 import { toast } from "react-toastify";
-
+import api from "../api/api";
 const BACKEND_ORIGIN = "https://flatware-surrogate-single.ngrok-free.dev";
 
 const PLATFORM_CONFIG = [
@@ -120,12 +120,9 @@ export default function ConnectSocials() {
 
   const fetchConnectedAccounts = async () => {
     try {
-      const { data } = await axios.get(
-        "http://localhost:3000/api/social/get/overview",
-        {
-          withCredentials: true,
-        },
-      );
+      const { data } = await api.get("/api/social/get/overview", {
+        withCredentials: true,
+      });
 
       const accounts = data.platforms || [];
 
