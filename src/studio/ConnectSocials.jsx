@@ -143,7 +143,7 @@ export default function ConnectSocials() {
     } catch (err) {
       console.error(err);
     }
-    setisLoading(false);
+    setIsloading(false);
   };
 
   // Fetch once on mount only. This must NOT depend on `connectedAccounts` —
@@ -167,7 +167,7 @@ export default function ConnectSocials() {
       const match = type.match(/^([A-Z]+)_(CONNECTED|ERROR)$/);
       if (!match) return;
 
-      const [, platformUpper, kind] = match;
+      const [platformUpper, kind] = match;
       const platform = platformUpper.toLowerCase();
 
       if (kind === "CONNECTED") {
