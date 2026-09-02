@@ -35,10 +35,16 @@ export default function App() {
 
   useEffect(() => {
     if (isSuccess) {
-      setUser(data.user);
-      setLogin(data.user.isAdmin);
+      if (data.success && data.user) {
+        setUser(data.user);
+        setLogin(data.user.isAdmin);
+      } else {
+        setUser(null);
+        setLogout();
+      }
     }
   }, [isSuccess, data]);
+
   useEffect(() => {
     if (isError) {
       setLogout();
